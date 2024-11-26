@@ -1,0 +1,118 @@
+---
+title: "Bellabeat Marketing Analysis"
+author: "sunavya varagani"
+date: "2024-11-26"
+output: html_document
+---
+
+# Introduction
+
+In this analysis, I explore Fitbit data to provide insights into Bellabeat's customer activity and sleep patterns. The goal is to understand how different activity levels (based on steps taken) correlate with sleep habits, such as sleep duration and time spent in bed. These insights will help guide marketing strategies for Bellabeat products.
+
+# Data Loading and Preprocessing
+First, we load the datasets and perform the necessary cleaning steps.
+
+# Load the necessary libraries
+```{r}
+library(dplyr)
+library(ggplot2)
+```
+
+# Set working directory (adjust the path to where your data is stored)
+```{r}
+setwd("C:/Users/030825130/OneDrive - csulb/Desktop/merged")
+```
+
+# Load the daily activity data and sleep day
+```{r}
+setwd(file.path("C:", "Users", "030825130", "OneDrive - csulb", "Desktop", "merged"))
+daily_activity <- read.csv("dailyActivity_merged.csv")
+sleep_day <- read.csv("sleepDay_merged.csv")
+```
+
+# Check the first few rows of the daily activity data
+```{r}
+head(daily_activity)
+```
+
+# Check the first few rows of the sleep data
+```{r}
+head(sleep_day)
+```
+
+# Data Cleaning and Preprocessing
+```{r}
+# Remove rows with NA values
+daily_activity_clean <- na.omit(daily_activity)
+sleep_day_clean <- na.omit(sleep_day)
+
+# Handle missing values by replacing NAs with the mean 
+daily_activity_clean$TotalSteps[is.na(daily_activity_clean$TotalSteps)] <- mean(daily_activity_clean$TotalSteps, na.rm = TRUE)
+sleep_day_clean$TotalMinutesAsleep[is.na(sleep_day_clean$TotalMinutesAsleep)] <- mean(sleep_day_clean$TotalMinutesAsleep, na.rm = TRUE)
+
+# Convert ActivityDate and SleepDay columns to Date type 
+daily_activity_clean$ActivityDate <- as.Date(daily_activity_clean$ActivityDate, format="%m/%d/%Y")
+sleep_day_clean$SleepDay <- as.Date(sleep_day_clean$SleepDay, format="%m/%d/%Y")
+
+# Create a new variable for activity level based on steps 
+daily_activity_clean <- daily_activity_clean %>%
+  mutate(ActivityLevel = case_when(
+    TotalSteps < 5000 ~ "Low Activity",
+    TotalSteps >= 5000 & TotalSteps <= 10000 ~ "Medium Activity",
+    TotalSteps > 10000 ~ "High Activity"
+  ))
+
+# Check for any remaining missing values after cleaning 
+colSums(is.na(daily_activity_clean))
+colSums(is.na(sleep_day_clean))
+
+# Merging the cleaned daily activity and sleep data
+combined_data_clean <- merge(daily_activity_clean, sleep_day_clean, by = "Id")
+
+# Check the structure of the merged dataset
+head(combined_data_clean)
+```
+
+# Data Visualizations
+# 1. Steps vs Sedentary Minutes (Scatter Plot)
+The "Steps vs Sedentary Minutes" scatter plot reveals the relationship between physical activity and sedentary behavior. If more active individuals tend to spend less time sedentary, Bellabeat can leverage this insight to promote their products as tools for reducing sedentary behavior and encouraging a more active lifestyle.
+```{r}
+ggplot(data=combined_data_clean, aes(x=TotalSteps, y=SedentaryMinutes)) + 
+  geom_point() + 
+  labs(title="Steps vs Sedentary Minutes (Cleaned Data)", x="Total Steps", y="Sedentary Minutes")
+```
+
+# 2. Minutes Asleep vs Time in Bed (Scatter Plot)
+This scatter plot shows the relationship between Total Minutes Asleep and Total Time in Bed. More time in bed generally leads to more sleep, so this visualization will help Bellabeat understand the connection between sleep habits and product usage.
+```{r}
+ggplot(data=sleep_day_clean, aes(x=TotalMinutesAsleep, y=TotalTimeInBed)) + 
+  geom_point() + 
+  labs(title="Minutes Asleep vs Time in Bed (Cleaned Data)", x="Minutes Asleep", y="Time in Bed")
+
+```
+
+# 3. Sedentary Minutes by Activity Level (Box Plot)
+This box plot shows the distribution of Sedentary Minutes by Activity Level (Low, Medium, High). By categorizing users based on their activity levels, we can see how sedentary behavior varies across different activity categories. This will help inform marketing strategies for targeting Low Activity users with campaigns to increase their steps and activity levels.
+```{r}
+ggplot(data=combined_data_clean, aes(x=ActivityLevel, y=SedentaryMinutes, fill=ActivityLevel)) + 
+  geom_boxplot() + 
+  labs(title="Sedentary Minutes by Activity Levels", x="Activity Level", y="Sedentary Minutes")
+```
+
+# 4. Steps vs Calories Burned (Scatter Plot)
+This scatter plot shows the relationship between Total Steps and Calories Burned, highlighting how more activity leads to higher calorie burn. It can help Bellabeat market its products as effective tools for supporting fitness and weight management.
+```{r}
+ggplot(data=combined_data_clean, aes(x=TotalSteps, y=Calories)) + 
+  geom_point() + 
+  labs(title="Steps vs Calories Burned (Cleaned Data)", x="Total Steps", y="Calories Burned")
+```
+
+# Conclusion:
+The visualizations reveal key insights for Bellabeat’s marketing strategy:
+
+__1. Steps vs Sedentary Minutes:__ More active individuals spend less time sedentary, suggesting Bellabeat products can help reduce sedentary behavior.<br>
+__2. Minutes Asleep vs Time in Bed:__ More time in bed leads to more sleep, indicating Bellabeat’s products can support better sleep habits.<br>
+__3. Sedentary Minutes by Activity Level:__ Low-activity users tend to be more sedentary, providing an opportunity to target them with activity-boosting campaigns.<br>
+__4. Steps vs Calories Burned:__ Increased steps lead to higher calorie burn, emphasizing Bellabeat products as effective tools for fitness and weight management.<br>
+
+These insights help guide targeted marketing and product development.
